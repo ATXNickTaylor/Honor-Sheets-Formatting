@@ -1,0 +1,44 @@
+/**
+ * Code Author: Nick Taylor (Sam Canlas' Partner)
+ *
+ * File Title: SeparateDate.script
+ * Google Sheets Function (Formula) Name: =FORMAT_DATE
+ * 
+ * Code Function: Separates the Date value from the Date object of the value of a DateTime cell.
+ * NOTE: This function will not function properly if the input cell is not (1) a datetime value, and (2) if the time is in UTC instead of Pacific.
+ * 
+ * Parameters: @param {string} inputDateTime - The datetime value to be converted.
+ *             @return - The formatted date as a string in MM/DD/YYYY format.
+ * Code Type: @customfunction
+ */
+function FORMAT_DATE(inputDateTime) {
+// Check if the inputDateTime is provided. If not, return null.
+  if (!inputDateTime) return null;
+
+  try {
+    // Try to create a Date object from the input. The input can be a string or a Date object.    
+    var date = new Date(inputDateTime);
+
+    // Check if the created date is valid. If the date is invalid (not a valid date), an error is thrown.
+    if (isNaN(date.getTime())) {
+      throw new Error("Invalid date");
+    }
+
+    // Extract the month, day, and year from the date object.
+    // getMonth() returns a 0-indexed month (0 for January, 11 for December), so 1 is added to normalize it.
+    var month = date.getMonth() + 1; // Months are 0-indexed
+    var day = date.getDate();
+    var year = date.getFullYear();
+
+    // If the month or day is a single digit, prepend it with '0' for proper formatting.
+    // This ensures the month and day are always two digits.
+    month = (month < 10) ? '0' + month : month;
+    day = (day < 10) ? '0' + day : day;
+
+    // Construct and return the formatted date string in MM/DD/YYYY format.
+    return month + "/" + day + "/" + year;
+  } catch (e) {
+    // If an error occurs (e.g., the input is not a valid date), return the error message within the cell.    
+    return e.message;
+  }
+}
