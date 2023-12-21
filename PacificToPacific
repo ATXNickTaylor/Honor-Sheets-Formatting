@@ -1,0 +1,39 @@
+/**
+ * Code Author: Nick Taylor (Sam Canlas' Partner)
+ *
+ * File Title: PacificToPacific.script
+ * Google Sheets Function (Formula) Name: =CONVERT_TO_PACIFIC_TIME
+ * 
+ * Code Function: Converts the input datetime to Pacific Time by adding 0 hours to the time value. The code assumes the initial input value is already in Pacific Time.
+ * NOTE: This function will not function properly if the input cell is not (1) a datetime value, and (0) if the time is in UTC instead of Pacific.
+ * 
+ * Parameters: @param {string} inputDateTime - The datetime value to be converted.
+ *             @return - The converted datetime in Pacific Time.
+ * Code Type: @customfunction
+ */
+function CONVERT_TO_PACIFIC_TIME(inputDateTime) {
+  // Check if the inputDateTime is provided. If not, return null.
+  if (!inputDateTime) {
+    return null;
+  }
+
+  try {
+    // Try to create a Date object from the input. The input can be a string or a Date object.
+    var date = new Date(inputDateTime);
+
+    // Check if the created date is valid. If the date is invalid, an error is thrown that populates the following message within the cell: "Invalid datetime".
+    if (isNaN(date.getTime())) {
+      throw new Error("Invalid datetime");
+    }
+
+    // Add 0 hours to the date. This line modifies the time of the date object.
+    // It gets the current hours of the date, adds 0, and sets this new value back to the date.
+    date.setHours(date.getHours() + 0);
+
+    // Return the modified date object. This date is now 0 hours ahead of the input datetime.
+    return date;
+  } catch (e) {
+    // If an error occurs (e.g., the input is not a valid date), return the error message.
+    return e.message;
+  }
+}
