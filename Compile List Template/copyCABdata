@@ -1,0 +1,64 @@
+function copyCABdata() {
+  // Author: Nick Taylor
+  // Purpose: In the provided CAB (Client Account Builder) workbook, the script references each Client Name, in row by row fashion, for each Care Pro listed. The expected data range is as follows: CAB workbook, L+T Initial Matches tab, columns B:I starting at row 5. The script operates in a recursive fashion until complete, and copies the structure of the tab to the TEMPLATE workbook, L+T Initial Matches tab.
+  // Script Callout: Instead of a longer, more complicated script that applies the highest Assistance Level directly to the CAB, the script was broken down into 3 steps to help non-technical audiences better understand the structure, in case troubleshooting is required.
+
+  // BEGIN SCRIPT
+
+  var ui = SpreadsheetApp.getUi();
+  
+  // Prompt the user for the Client Account Builder Workbook URL.
+  var response = ui.prompt("Please provide the URL for the applicable CLIENT ACCOUNT BUILDER Workbook. The format should be: https://docs.google.com/spreadsheets/d/spreadsheetID/edit. DO NOT include the # or anything after it, such as #gid=123045789.");
+
+  // Exit the script if no URL is provided, showing an appropriate message.
+  if (response.getSelectedButton() != ui.Button.OK || !response.getResponseText()) {
+    ui.alert("Script cannot run without a URL to the Client Account Builder.");
+    return;
+  }
+  
+  // Save the URL in script properties for later use by other scripts.
+  var properties = PropertiesService.getScriptProperties();
+  properties.setProperty('clientAccountBuilderUrl', response.getResponseText());
+  
+  // Open the source workbook and access the "L+T Initial Matches" tab.
+  var sourceWorkbook = SpreadsheetApp.openByUrl(properties.getProperty('clientAccountBuilderUrl'));
+  var sourceSheet = sourceWorkbook.getSheetByName("L+T Initial Matches");
+  
+  // Notify and stop if the "L+T Initial Matches" tab doesn't exist in the source.
+  if (!sourceSheet) {
+    ui.alert("The 'L+T Initial Matches' tab does not exist in the provided workbook.");
+    return;
+  }
+  
+  // Calculate the range to copy based on data in column A.
+  var lastRow = sourceSheet.getLastRow();
+  var dataRange = sourceSheet.getRange("A4:K" + (lastRow > 3 ? lastRow : 3)).getValues(); // Adjusted to ensure at least from A4:K4.
+
+  // Open the target workbook and access the "L+T Initial Matches" tab.
+  var targetWorkbook = SpreadsheetApp.getActiveSpreadsheet();
+  var targetSheet = targetWorkbook.getSheetByName("L+T Initial Matches");
+  
+  // Notify and stop if the "L+T Initial Matches" tab doesn't exist in the target.
+  if (!targetSheet) {
+    ui.alert("The 'L+T Initial Matches' tab does not exist in the current workbook.");
+    return;
+  }
+  
+  // Check for existing data and confirm overwriting with the user.
+  if (!targetSheet.getRange("A4:K" + targetSheet.getMaxRows()).isBlank()) {
+    var overwriteResponse = ui.alert("There is currently data on 'L+T Initial Matches', continuing will overwrite that data. Do you wish to continue?", ui.ButtonSet.YES_NO);
+    
+    if (overwriteResponse == ui.Button.NO) {
+      ui.alert("Script ended per user request.");
+      return;
+    }
+  }
+  
+  // Clear existing data and set new values in the target range.
+  targetSheet.getRange("A4:K" + targetSheet.getMaxRows()).clearContent();
+  targetSheet.getRange("A4:K" + (3 + dataRange.length)).setValues(dataRange); // Adjusted to set values starting from A4.
+  
+  // Notify the user upon successful completion.
+  ui.alert("Content successfully pasted in 'L+T Initial Matches' tab. Please verify and continue to the next step.");
+}
+// END SCRIPT
