@@ -1,0 +1,69 @@
+function populateAssistanceLevels3() {
+  // Author: Nick Taylor
+  // Purpose: In the provided CAR (Client Account Review) workbook, the script references each Client Name tab to find the <Assistance Level> for each Client by finding the header "Assistance Level", and selecting the value directly to the right of the header. The value is then populated on the Compiled List tab in the TEMPLATE workbook, under the "Week 4" column, Column D.
+  // Script Callout: The method is performed this way to account for any changes in formatting. Normally, the Assistance Level can be found in Cell D23, but if the formatting changes, the wrong value could be populated, thus erroring out the script. This method accounts for that by searching for the header and populating the value next to it.
+  // Script Callout: The IMPL Franchise Tracker sometimes requires Specialists to run the Assistance Levels in 3 phases: Initial, Week 3, and Week 4. This script allows for a snapshot view of Assistance Levels per Client, without overwriting previous data.
+
+  // BEGIN SCRIPT
+
+  // Initialize the user interface for interaction.
+  var ui = SpreadsheetApp.getUi();
+
+  // Retrieve the URL from the Properties Service, set by the compileList function.
+  var scriptProperties = PropertiesService.getScriptProperties();
+  var sharedUrl = scriptProperties.getProperty('sharedUrl');
+
+  // If the URL hasn't been set, prompt the user to run the compileList function first.
+  if (!sharedUrl) {
+    ui.alert("Please run the 'Compile List' script first to provide the URL.");
+    return;  // Stop execution if the URL is not available.
+  }
+
+  // Open the workbook using the URL provided in the compileList function.
+  var sourceWorkbook = SpreadsheetApp.openByUrl(sharedUrl);
+
+  // Target the 'Compiled List' tab within the current workbook.
+  var targetSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Compiled List');
+
+  // Fetch all client names from column A, starting from row 3.
+  var clientNames = targetSheet.getRange('A3:A' + targetSheet.getLastRow()).getValues();
+
+  // Loop through each client name to process their assistance levels.
+  clientNames.forEach(function(row, index) {
+    var clientName = row[0];  // Extract the client name from the current row.
+
+    // Only proceed if there's a client name present.
+    if (clientName) {
+      try {
+        // Attempt to find the client's tab within the source workbook.
+        var clientSheet = sourceWorkbook.getSheetByName(clientName);
+
+        // If the client's tab exists, search for the "Assistance Level" cell.
+        if (clientSheet) {
+          var foundRange = clientSheet.createTextFinder("Assistance Level").findNext();
+
+          // If the "Assistance Level" cell is found, fetch its adjacent value.
+          if (foundRange) {
+            var assistanceLevel = clientSheet.getRange(foundRange.getRow(), foundRange.getColumn() + 1).getValue();
+
+            // Populate the fetched value in Column D of the 'Compiled List' tab, aligned with the client name.
+            targetSheet.getRange('D' + (index + 3)).setValue(assistanceLevel);  // Changed to populate in Column D
+          } else {
+            // If "Assistance Level" is not found, mark it accordingly in Column D.
+            targetSheet.getRange('D' + (index + 3)).setValue("Cannot find 'Assistance Level'");  // Note updated to reflect Column D
+          }
+        } else {
+          // If the client's tab is not found, mark it accordingly in Column D.
+          targetSheet.getRange('D' + (index + 3)).setValue("Cannot find tab name");  // Note updated to reflect Column D
+        }
+      } catch (e) {
+        // In case of any errors, log the error message next to the client's name in Column D.
+        targetSheet.getRange('D' + (index + 3)).setValue("Error: " + e.message);  // Note updated to reflect Column D
+      }
+    }
+  });
+
+  // Upon completion, inform the user that the assistance levels have been successfully populated.
+  ui.alert("Assistance Levels have been populated in the Week 4 column on the Compiled List (Column D) tab.");
+}
+// END SCRIPT
