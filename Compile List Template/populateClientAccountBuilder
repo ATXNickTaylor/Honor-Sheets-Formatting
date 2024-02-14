@@ -1,0 +1,54 @@
+function populateClientAccountBuilder() {
+  // Author: Nick Taylor
+  // Purpose: This script requires the user to provide the CLIENT ACCOUNT BUILDER workbook URL that they wish to update with the HIGHEST L+T. Once the user provides the URL, the script ONLY populates the column named "Highest L+T Client" with updated values, as to avoid causing any errors to existing formulas in the CLIENT ACCOUNT BUILDER workbook.
+
+  // BEGIN SCRIPT
+
+  var ui = SpreadsheetApp.getUi();
+
+  // Step 1: Prompt the user for the URL of the Client Account Builder workbook.
+  var response = ui.prompt("Please copy and paste the URL to the Client Account Builder workbook that you wish to populate. The format should be: https://docs.google.com/spreadsheets/d/spreadsheetID/edit. DO NOT include the # or anything after it, such as #gid=123045789.");
+
+  // Step 2: Check if the user has provided a URL. If not, display an error message and stop the script.
+  if (response.getSelectedButton() != ui.Button.OK || !response.getResponseText()) {
+    ui.alert("Script cannot run without a URL to the Client Account Builder.");
+    return;
+  }
+
+  // Step 3: Open the target workbook using the URL provided by the user.
+  var targetWorkbook = SpreadsheetApp.openByUrl(response.getResponseText());
+  var targetSheet = targetWorkbook.getSheetByName("L+T Initial Matches");
+
+  // Step 4: Access the source workbook and the "L+T Initial Matches" tab.
+  var sourceSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("L+T Initial Matches");
+
+  // Step 5: Retrieve the values from both source and target sheets.
+  var sourceData = sourceSheet.getRange("A5:K" + sourceSheet.getLastRow()).getValues();
+  var targetData = targetSheet.getRange("A5:K" + targetSheet.getLastRow()).getValues();
+
+  // Step 6: Loop through each row in the target workbook and update column K based on the source data.
+  targetData.forEach(function(row, index) {
+    var nameInTarget = row[0];
+    var targetRowNumber = index + 5;
+
+    // Check if the name cell in the target sheet is not empty.
+    if (nameInTarget) {
+      var foundInSource = sourceData.find(function(sourceRow) {
+        return sourceRow[0] === nameInTarget;
+      });
+
+      // If the name from the target is found in the source, copy the corresponding value from column K in the source.
+      if (foundInSource) {
+        var valueToCopy = foundInSource[10]; // Column K is the 11th column.
+        targetSheet.getRange("K" + targetRowNumber).setValue(valueToCopy);
+      } else {
+        // If the name is not found in the source, populate "Name not in template".
+        targetSheet.getRange("K" + targetRowNumber).setValue("Name not in template");
+      }
+    }
+  });
+
+  // Step 7: Notify the user once the operation is complete.
+  ui.alert("Highest L&T Client has been populated on the Client Account Builder.");
+}
+// END SCRIPT
