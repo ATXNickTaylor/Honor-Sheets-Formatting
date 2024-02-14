@@ -1,0 +1,52 @@
+function updateLTInitialMatches() {
+  // Author: Nick Taylor
+  // Purpose: This script populates the Highest Assistance Level per Client name on the L+T Initial Matches tab in the TEMPLATE workbook. This script prepares the user to REPOPULATE the CLIENT ACCOUNT BUILDER workbook with the appropriate values.
+
+  // BEGIN SCRIPT
+
+  var ui = SpreadsheetApp.getUi();
+  var sheet = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 1. Check for existing data in column K of the "L+T Initial Matches" tab.
+  var ltSheet = sheet.getSheetByName("L+T Initial Matches");
+  var dataInColumnK = ltSheet.getRange("K5:K" + ltSheet.getLastRow()).getValues();
+  var dataExistsInK = dataInColumnK.some(function(row) { return row[0] !== ""; });
+
+  if (dataExistsInK) {
+    var response = ui.alert("Running this script will overwrite data that currently exists in Column K of the L+T Initial Matches tab. Do you wish to continue?", ui.ButtonSet.YES_NO);
+    if (response !== ui.Button.YES) {
+      ui.alert("Script halted per user request.");
+      return;
+    }
+  }
+
+  // 2. Loop through rows in "L+T Initial Matches" and find values in "Compiled List".
+  var compiledListSheet = sheet.getSheetByName("Compiled List");
+  var compiledData = compiledListSheet.getRange("A2:G" + compiledListSheet.getLastRow()).getValues();
+  var lastRowLT = ltSheet.getLastRow();
+
+  for (var i = 5; i <= lastRowLT; i++) {
+    var rowData = ltSheet.getRange(i, 2, 1, 8).getValues()[0];
+    var maxFValue = -1;
+    var correspondingGValue = "";
+
+    rowData.forEach(function(cellValue) {
+      if (cellValue) {
+        compiledData.forEach(function(compiledRow) {
+          if (compiledRow[0] === cellValue && compiledRow[5] > maxFValue) {
+            maxFValue = compiledRow[5];
+            correspondingGValue = compiledRow[6];
+          }
+        });
+      }
+    });
+
+    if (correspondingGValue) {
+      ltSheet.getRange("K" + i).setValue(correspondingGValue);
+    }
+  }
+
+  // 3. Notify the user that the operation is complete.
+  ui.alert("Highest L&T Client has been populated on the L+T Initial Matches tab.");
+}
+// END SCRIPT
