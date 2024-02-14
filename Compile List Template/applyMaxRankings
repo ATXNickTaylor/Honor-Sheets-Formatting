@@ -1,0 +1,51 @@
+function applyMaxRankings() {
+  // Author: Nick Taylor
+  // Purpose: This script then goes through each Assistance Level per Client, and provides the IMPL Franchise Tracker versions of Assistance Level based on what was populated for each Client. For example, Standby Assistance is converted to Light Assistance, which is the lowest ranked assistance level.
+
+  // BEGIN SCRIPT
+
+  var ui = SpreadsheetApp.getUi();
+
+  // Step 2: Check for existing data in the "Compiled List" tab, range F3:G.
+  var compiledListSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Compiled List");
+  var rangeF3G = compiledListSheet.getRange("F3:G" + compiledListSheet.getLastRow());
+  if (!rangeF3G.isBlank()) {
+    var overwriteResponse = ui.alert("Running this script will overwrite data that currently exists in columns F & G of the Compiled List tab. Do you wish to continue?", ui.ButtonSet.YES_NO);
+    if (overwriteResponse == ui.Button.NO) {
+      ui.alert("Script halted per user request.");
+      return;
+    }
+  }
+
+  // Step 3: Process the data from columns B, C, and D, and find the highest rank in "Assistance Level Ranking".
+  var assistanceLevelSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Assistance Level Ranking");
+  var assistanceLevelData = assistanceLevelSheet.getRange("A2:C" + assistanceLevelSheet.getLastRow()).getValues();
+  var compiledListData = compiledListSheet.getRange("B3:D" + compiledListSheet.getLastRow()).getValues();
+
+  var resultArray = [];
+  compiledListData.forEach(function(row) {
+    var maxRank = -1;
+    var maxRankRow = [];
+    row.forEach(function(cellValue) {
+      var foundRows = assistanceLevelData.filter(function(assistanceRow) {
+        return assistanceRow[1] === cellValue;
+      });
+      foundRows.forEach(function(foundRow) {
+        if (foundRow[0] > maxRank) {
+          maxRank = foundRow[0];
+          maxRankRow = [foundRow[0], foundRow[2]];
+        }
+      });
+    });
+    resultArray.push(maxRankRow);
+  });
+
+  // Write results to columns F and G.
+  resultArray.forEach(function(row, index) {
+    compiledListSheet.getRange("F" + (index + 3) + ":G" + (index + 3)).setValues([row]);
+  });
+
+  // Step 5: Notify the user that the process is complete.
+  ui.alert("Max rankings have been applied to the Compiled List tab.");
+}
+// END SCRIPT
